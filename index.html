@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC 猜涨跌 - Binance Events</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border-radius: 10px;
+            border-bottom: 2px solid #f7931a;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #f7931a;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .info-box {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f7931a;
+        }
+
+        .price-display {
+            background: rgba(247, 147, 26, 0.1);
+            border: 2px solid #f7931a;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 40px;
+            animation: pulseBorder 2s infinite;
+        }
+
+        @keyframes pulseBorder {
+            0%, 100% { border-color: #f7931a; }
+            50% { border-color: rgba(247, 147, 26, 0.3); }
+        }
+
+        .price-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #f7931a;
+        }
+
+        .price-change {
+            font-size: 20px;
+            transition: color 0.3s;
+        }
+
+        .price-change.up {
+            color: #4caf50;
+        }
+
+        .price-change.down {
+            color: #f44336;
+        }
+
+        .betting-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .betting-area {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #f7931a;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #2d2d44;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #f7931a;
+            box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2);
+        }
+
+        .duration-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .duration-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #2d2d44;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .duration-btn.active {
+            background: #f7931a;
+            color: #000;
+            border-color: #f7931a;
+        }
+
+        .duration-btn:hover {
+            border-color: #f7931a;
+            color: #f7931a;
+        }
+
+        .bet-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-up {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: #fff;
+        }
+
+        .btn-up:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-down {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            color: #fff;
+        }
+
+        .btn-down:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f7931a;
+        }
+
+        .bets-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .bet-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bet-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #f7931a, transparent);
+        }
+
+        .bet-card.win::before {
+            background: linear-gradient(90deg, #4caf50, transparent);
+        }
+
+        .bet-card.lose::before {
+            background: linear-gradient(90deg, #f44336, transparent);
+        }
+
+        .bet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .bet-direction {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .bet-direction.up {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+
+        .bet-direction.down {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+
+        .bet-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(247, 147, 26, 0.2);
+            color: #f7931a;
+        }
+
+        .bet-status.win {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+
+        .bet-status.lose {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+
+        .bet-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .bet-info-label {
+            color: #aaa;
+        }
+
+        .bet-info-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .bet-timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f7931a;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .bet-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .message.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+
+        .message.info {
+            background: rgba(247, 147, 26, 0.2);
+            color: #f7931a;
+            border: 1px solid rgba(247, 147, 26, 0.5);
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #f7931a;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .leaderboard-table thead {
+            border-bottom: 2px solid #f7931a;
+        }
+
+        .leaderboard-table th {
+            text-align: left;
+            padding: 12px;
+            color: #f7931a;
+            font-weight: 600;
+        }
+
+        .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #ddd;
+        }
+
+        .leaderboard-table tr:hover {
+            background: rgba(247, 147, 26, 0.05);
+        }
+
+        .leaderboard-table tr:nth-child(1) td:first-child::before {
+            content: '🥇 ';
+        }
+
+        .leaderboard-table tr:nth-child(2) td:first-child::before {
+            content: '🥈 ';
+        }
+
+        .leaderboard-table tr:nth-child(3) td:first-child::before {
+            content: '🥉 ';
+        }
+
+        .no-data {
+            text-align: center;
+            color: #aaa;
+            padding: 40px 20px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            .price-value {
+                font-size: 36px;
+            }
+
+            .header-info {
+                flex-direction: column;
+            }
+
+            .bets-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 BTC 猜涨跌</h1>
+            <p style="color: #aaa; margin-bottom: 15px;">基于 Binance 实时价格 - 猜 5/10/30 分钟后的涨跌</p>
+            <div class="header-info">
+                <div class="info-box">
+                    <div class="info-label">当前余额</div>
+                    <div class="info-value">$<span id="balance">100.00</span></div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">总投注</div>
+                    <div class="info-value"><span id="totalBets">0</span></div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">胜场</div>
+                    <div class="info-value" style="color: #4caf50;"><span id="wins">0</span></div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">负场</div>
+                    <div class="info-value" style="color: #f44336;"><span id="losses">0</span></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="messageBox" class="message"></div>
+
+        <div class="price-display">
+            <div style="color: #aaa; font-size: 14px;">BTC/USDT</div>
+            <div class="price-value" id="priceValue">--</div>
+            <div class="price-change" id="priceChange"></div>
+            <div style="color: #aaa; font-size: 12px; margin-top: 10px;">最后更新: <span id="lastUpdate">--</span></div>
+        </div>
+
+        <div class="betting-area">
+            <div class="card">
+                <h2>📝 下单</h2>
+                <div class="form-group">
+                    <label>下单金额 (最小: $5, 最大: $<span id="maxBet">100</span>)</label>
+                    <input type="number" id="betAmount" min="5" max="100" step="5" value="5">
+                </div>
+
+                <label style="display: block; margin-bottom: 10px; color: #ccc;">选择时间周期</label>
+                <div class="duration-buttons">
+                    <button class="duration-btn active" data-duration="5">5分钟</button>
+                    <button class="duration-btn" data-duration="10">10分钟</button>
+                    <button class="duration-btn" data-duration="30">30分钟</button>
+                </div>
+
+                <div class="bet-buttons">
+                    <button class="btn-up" id="btnUp">📈 看涨 (UP)</button>
+                    <button class="btn-down" id="btnDown">📉 看跌 (DOWN)</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 统计信息</h2>
+                <div class="form-group">
+                    <div class="stat-card">
+                        <div class="stat-label">胜率</div>
+                        <div class="stat-value"><span id="winRate">0</span>%</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="stat-card">
+                        <div class="stat-label">总收益</div>
+                        <div class="stat-value" id="totalProfit" style="color: #4caf50;">$0.00</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="stat-card">
+                        <div class="stat-label">连胜</div>
+                        <div class="stat-value"><span id="streak">0</span></div>
+                    </div>
+                </div>
+                <button style="width: 100%; margin-top: 15px; padding: 10px; background: #f7931a; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="resetData()">🔄 重置数据</button>
+            </div>
+        </div>
+
+        <div id="activeBetsSection" style="display: none; margin-bottom: 40px;">
+            <h2 class="section-title">⏱️ 进行中的投注</h2>
+            <div id="activeBets" class="bets-container"></div>
+        </div>
+
+        <div id="betHistorySection" style="display: none; margin-bottom: 40px;">
+            <h2 class="section-title">📜 投注历史</h2>
+            <div id="betHistory" class="bets-container"></div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">🏆 排行榜</h2>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>玩家</th>
+                        <th>余额</th>
+                        <th>战绩</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        const gameData = {
+            balance: 100,
+            totalBets: 0,
+            wins: 0,
+            losses: 0,
+            bets: [],
+            players: {}
+        };
+
+        const INITIAL_BALANCE = 100;
+        const MIN_BET = 5;
+        const WIN_RATE = 0.8;
+        let currentPrice = 0;
+        let previousPrice = 0;
+        let selectedDuration = 5;
+
+        // 从 localStorage 加载数据
+        function loadData() {
+            const saved = localStorage.getItem('btcGameData');
+            if (saved) {
+                Object.assign(gameData, JSON.parse(saved));
+            }
+            updateUI();
+        }
+
+        // 保存数据到 localStorage
+        function saveData() {
+            localStorage.setItem('btcGameData', JSON.stringify(gameData));
+        }
+
+        // 获取 BTC 价格
+        async function fetchBtcPrice() {
+            try {
+                const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+                const data = await response.json();
+                previousPrice = currentPrice;
+                currentPrice = parseFloat(data.price);
+                updatePriceDisplay();
+            } catch (error) {
+                console.error('获取价格失败:', error);
+            }
+        }
+
+        // 更新价格显示
+        function updatePriceDisplay() {
+            document.getElementById('priceValue').textContent = currentPrice.toFixed(2);
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+
+            const priceChangeEl = document.getElementById('priceChange');
+            if (previousPrice && currentPrice > previousPrice) {
+                priceChangeEl.textContent = '📈 上升';
+                priceChangeEl.className = 'price-change up';
+            } else if (previousPrice && currentPrice < previousPrice) {
+                priceChangeEl.textContent = '📉 下跌';
+                priceChangeEl.className = 'price-change down';
+            } else {
+                priceChangeEl.textContent = '→ 平稳';
+                priceChangeEl.className = 'price-change';
+            }
+        }
+
+        // 显示消息
+        function showMessage(text, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = text;
+            box.className = `message ${type} show`;
+            setTimeout(() => {
+                box.classList.remove('show');
+            }, 3000);
+        }
+
+        // 下单
+        function placeBet(direction) {
+            const amount = parseFloat(document.getElementById('betAmount').value);
+
+            if (isNaN(amount) || amount < MIN_BET) {
+                showMessage(`❌ 最小下单金额为 $${MIN_BET}`, 'error');
+                return;
+            }
+
+            if (amount > gameData.balance) {
+                showMessage('❌ 余额不足', 'error');
+                return;
+            }
+
+            if (!currentPrice) {
+                showMessage('⏳ 等待价格数据...', 'error');
+                return;
+            }
+
+            // 扣款
+            gameData.balance -= amount;
+
+            const bet = {
+                id: Date.now(),
+                amount: amount,
+                direction: direction,
+                duration: selectedDuration,
+                entryPrice: currentPrice,
+                entryTime: new Date(),
+                status: 'open',
+                settleTime: Date.now() + selectedDuration * 60000
+            };
+
+            gameData.bets.push(bet);
+            saveData();
+
+            showMessage(`✅ 已下单 ${direction} $${amount}，${selectedDuration} 分钟后结算`, 'success');
+
+            // 禁用按钮
+            document.getElementById('btnUp').disabled = true;
+            document.getElementById('btnDown').disabled = true;
+
+            // 定时结算
+            setTimeout(() => {
+                settleBet(bet.id);
+            }, selectedDuration * 60000);
+
+            updateUI();
+        }
+
+        // 结算投注
+        function settleBet(betId) {
+            const bet = gameData.bets.find(b => b.id === betId);
+            if (!bet || bet.status !== 'open') return;
+
+            const exitPrice = currentPrice;
+            const isWin = (bet.direction === 'UP' && exitPrice > bet.entryPrice) ||
+                         (bet.direction === 'DOWN' && exitPrice < bet.entryPrice);
+
+            bet.exitPrice = exitPrice;
+            bet.status = isWin ? 'win' : 'lose';
+            bet.settleTime = new Date();
+
+            if (isWin) {
+                const profit = bet.amount * WIN_RATE;
+                bet.profit = profit;
+                gameData.balance += bet.amount + profit;
+                gameData.wins++;
+            } else {
+                bet.profit = 0;
+                gameData.losses++;
+            }
+
+            gameData.totalBets++;
+            saveData();
+
+            showMessage(
+                isWin ? 
+                `🎉 恭喜！${bet.direction} 赚了 $${(bet.amount * WIN_RATE).toFixed(2)}` :
+                `😢 可惜了，${bet.direction} 亏了 $${bet.amount}`,
+                isWin ? 'success' : 'error'
+            );
+
+            // 解除按钮禁用
+            document.getElementById('btnUp').disabled = false;
+            document.getElementById('btnDown').disabled = false;
+
+            updateUI();
+        }
+
+        // 更新 UI
+        function updateUI() {
+            // 更新余额和统计
+            document.getElementById('balance').textContent = gameData.balance.toFixed(2);
+            document.getElementById('totalBets').textContent = gameData.totalBets;
+            document.getElementById('wins').textContent = gameData.wins;
+            document.getElementById('losses').textContent = gameData.losses;
+            document.getElementById('maxBet').textContent = gameData.balance;
+
+            // 计算胜率
+            const winRate = gameData.totalBets > 0 ? 
+                Math.round((gameData.wins / gameData.totalBets) * 100) : 0;
+            document.getElementById('winRate').textContent = winRate;
+
+            // 计算总收益
+            const totalProfit = gameData.balance - INITIAL_BALANCE;
+            document.getElementById('totalProfit').textContent = 
+                (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(2);
+            document.getElementById('totalProfit').style.color = 
+                totalProfit >= 0 ? '#4caf50' : '#f44336';
+
+            // 计算连胜
+            let streak = 0;
+            for (let i = gameData.bets.length - 1; i >= 0; i--) {
+                if (gameData.bets[i].status === 'win') {
+                    streak++;
+                } else if (gameData.bets[i].status !== 'open') {
+                    break;
+                }
+            }
+            document.getElementById('streak').textContent = streak;
+
+            // 更新投注显示
+            updateBetsDisplay();
+
+            // 更新排行榜
+            updateLeaderboard();
+        }
+
+        // 更新投注显示
+        function updateBetsDisplay() {
+            const activeBets = gameData.bets.filter(b => b.status === 'open');
+            const closedBets = gameData.bets.filter(b => b.status !== 'open').reverse();
+
+            // 显示进行中的投注
+            if (activeBets.length > 0) {
+                document.getElementById('activeBetsSection').style.display = 'block';
+                document.getElementById('activeBets').innerHTML = activeBets.map(bet => {
+                    const timeLeft = Math.max(0, Math.ceil((bet.settleTime - Date.now()) / 1000));
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    return `
+                        <div class="bet-card">
+                            <div class="bet-header">
+                                <span class="bet-direction ${bet.direction.toLowerCase()}">${bet.direction}</span>
+                                <span class="bet-status">进行中</span>
+                            </div>
+                            <div class="bet-info">
+                                <span class="bet-info-label">下单金额:</span>
+                                <span class="bet-info-value">$${bet.amount}</span>
+                            </div>
+                            <div class="bet-info">
+                                <span class="bet-info-label">开盘价:</span>
+                                <span class="bet-info-value">$${bet.entryPrice.toFixed(2)}</span>
+                            </div>
+                            <div class="bet-info">
+                                <span class="bet-info-label">当前价:</span>
+                                <span class="bet-info-value">$${currentPrice.toFixed(2)}</span>
+                            </div>
+                            <div class="bet-timer">⏱️ ${minutes}分${seconds}秒</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                document.getElementById('activeBetsSection').style.display = 'none';
+            }
+
+            // 显示历史投注
+            if (closedBets.length > 0) {
+                document.getElementById('betHistorySection').style.display = 'block';
+                document.getElementById('betHistory').innerHTML = closedBets.slice(0, 20).map(bet => {
+                    const isWin = bet.status === 'win';
+                    return `
+                        <div class="bet-card ${isWin ? 'win' : 'lose'}">
+                            <div class="bet-header">
+                                <span class="bet-direction ${bet.direction.toLowerCase()}">${bet.direction}</span>
+                                <span class="bet-status ${isWin ? 'win' : 'lose'}">
+                                    ${isWin ? '✅ 赢' : '❌ 亏'}
+                                </span>
+                            </div>
+                            <div class="bet-info">
+                                <span class="bet-info-label">下单金额:</span>
+                                <span class="bet-info-value">$${bet.amount}</span>
+                            </div>
+                            <div class="bet-info">
+                                <span class="bet-info-label">开盘/收盘:</span>
+                                <span class="bet-info-value">$${bet.entryPrice.toFixed(2)} / $${bet.exitPrice.toFixed(2)}</span>
+                            </div>
+                            <div class="bet-result">
+                                <strong>${isWin ? '+ 收益' : '- 亏损'}: $${Math.abs(isWin ? bet.profit : bet.amount).toFixed(2)}</strong>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                document.getElementById('betHistorySection').style.display = 'none';
+            }
+
+            // 实时更新进行中的投注倒计时
+            if (activeBets.length > 0) {
+                setTimeout(updateBetsDisplay, 1000);
+            }
+        }
+
+        // 更新排行榜
+        function updateLeaderboard() {
+            // 从 localStorage 获取所有玩家数据（这里简化处理，实际应该有更复杂的逻辑）
+            const leaderboard = [
+                { rank: 1, name: '当前玩家', balance: gameData.balance, record: `${gameData.wins}W-${gameData.losses}L` }
+            ];
+
+            // 模拟其他玩家
+            const others = [
+                { name: '超级赢家', balance: 250, record: '18W-2L' },
+                { name: '交易高手', balance: 180, record: '15W-5L' },
+                { name: '稳健玩家', balance: 140, record: '12W-8L' },
+                { name: '新手玩家', balance: 95, record: '5W-12L' }
+            ];
+
+            const allPlayers = [
+                ...leaderboard,
+                ...others
+            ].sort((a, b) => b.balance - a.balance);
+
+            document.getElementById('leaderboardBody').innerHTML = allPlayers.map((player, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${player.name}</td>
+                    <td>$${player.balance.toFixed(2)}</td>
+                    <td>${player.record}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 重置数据
+        function resetData() {
+            if (confirm('确定要重置所有数据吗？')) {
+                gameData.balance = INITIAL_BALANCE;
+                gameData.totalBets = 0;
+                gameData.wins = 0;
+                gameData.losses = 0;
+                gameData.bets = [];
+                saveData();
+                updateUI();
+                showMessage('✅ 数据已重置', 'success');
+            }
+        }
+
+        // 事件监听
+        document.getElementById('btnUp').addEventListener('click', () => placeBet('UP'));
+        document.getElementById('btnDown').addEventListener('click', () => placeBet('DOWN'));
+
+        document.querySelectorAll('.duration-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedDuration = parseInt(btn.dataset.duration);
+            });
+        });
+
+        // 初始化
+        loadData();
+        fetchBtcPrice();
+
+        // 定时更新价格
+        setInterval(fetchBtcPrice, 5000);
+
+        // 定时检查是否有投注需要结算
+        setInterval(() => {
+            const now = Date.now();
+            gameData.bets.forEach(bet => {
+                if (bet.status === 'open' && now >= bet.settleTime) {
+                    settleBet(bet.id);
+                }
+            });
+        }, 1000);
+
+        // 页面关闭时保存数据
+        window.addEventListener('beforeunload', saveData);
+    </script>
+</body>
+</html>
